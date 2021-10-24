@@ -375,6 +375,7 @@ def cross_validation_score(model, x , y, loss, cv, seed):
     y: np.ndarray
         Vector of N observed values
     loss: function
+        A loss function which takes x and y as input and returns a non-negative floating point
     cv: float
         The number of folds to split the data
     seed: int
