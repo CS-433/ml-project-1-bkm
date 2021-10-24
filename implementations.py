@@ -77,6 +77,7 @@ def create_csv_submission(ids, y_pred, name):
 
 def compute_mse(y, tx, w):
     """Mean squared error"""
+    
     e = y - tx @ w
     return 1/(2 * len(y)) * e @ e 
 
@@ -312,6 +313,7 @@ def reg_logistic_regression_gd(y, tx, lambda_, initial_w, max_iters, gamma):
 """ HELPERS """
 
 def build_polynomial_features(x, degree):
+    """ builds polynomial features"""
     phi = np.zeros((len(x), degree + 1))
     for i in range(degree+1):
         phi[:, i] = x**i 
@@ -353,6 +355,37 @@ def build_k_indices(y, k_fold, seed):
 
 
 def cross_validation_score(model, x , y, loss, cv, seed):
+    """
+    Computes k-fold cross validation losses for a given model
+
+    WARNING: a model should return the optimal weights and loss: w, loss
+    it should have the parametres y and x for the observed values and input variables
+    if a model has regularization parameters we should create a wrapper before passing, e. g.
+
+   
+    from functools import partial \\
+    model = partial(ridge_regression, lambda_=1))
+
+    Parameters:
+    ----------
+    model : function
+        A model function which takes x and y as input and returns w, loss
+    x: np.ndarray
+        An N x D matrix, where N is a number of predictor variables and D is the number of featres
+    y: np.ndarray
+        Vector of N observed values
+    loss: function
+    cv: float
+        The number of folds to split the data
+    seed: int
+        Random seed used to initialize the pseudo-random number generator
+
+    Returns:
+    ----------
+    scores : np.ndarray
+        A cv x 2 matrix, the first column contains the train losses, the second containt the test loss for each fold
+    """
+
     k_indices = build_k_indices(y, cv, seed)
     scores = np.zeros(cv)
     for fold in range(cv):
@@ -364,6 +397,7 @@ def cross_validation_score(model, x , y, loss, cv, seed):
         x_train = x[selector]
 
         w, train_loss = model(y_train,x_train)
+        train_loss = loss(y_train, x_train, w)
         test_loss = loss(y_test, x_test, w)
         scores[fold] = np.array([train_loss, test_loss])
 
