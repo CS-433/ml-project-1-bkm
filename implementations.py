@@ -84,28 +84,63 @@ def compute_least_squares_gradient(y, tx, w):
     """Gradient of the MSE loss function with respect to the weights"""
     return -1 / len(y) * tx.T @ (y - tx @ w)
 
-def least_squares_gd(y, tx, initial_w, max_iters, gamma):
-    """Linear regression using gradient descent"""
+
+def least_squares_gd(y, tx, initial_w, max_iters, gamma, num_batches=1):
+    """
+    Linear regression model using gradient descent or stochastic gradient descent
+
+    Parameters:
+    ----------
+    y : np.ndarray
+        Vector of N observed values
+    tx: np.ndarray
+        An N x D matrix, where N is a number of predictor variables and D is the number of features
+    initial_w : np.ndarray
+        The initial vector of D model weights
+    gamma: float
+        Learning rate 
+    max_iters: float, default=1
+        The maximum number of iterations over the training data (aka epochs)
+    num_batches: float
+        The number of batches for SGD, by defaut it is set to one, resulting simple GD
+
+    Returns:
+    ----------
+    w : np.ndarray
+        Vector of D model weights 
+    loss: 
+        A non-negative floating point
+    
+    """
+
     w = initial_w
     for n_iter in range(max_iters):
-        gradient = compute_least_squares_gradient(y, tx, w)
-        w = w- gamma * gradient
+        for batch_y, batch_tx in batch_iter(y, tx, 1, num_batches = num_batches):
+            gradient = compute_least_squares_gradient(batch_y, batch_tx, w)
+            w = w - gamma * gradient
     loss = compute_mse(y, tx ,w)
     return w, loss
     
 
-def least_squares_sgd(y, tx, initial_w, max_iters, gamma): 
-    """Linear regression using stochastic gradient descent"""
-    w = initial_w
-    for batch_y, batch_tx in batch_iter(y, tx, 1, num_batches = max_iters):
-        grad = compute_least_squares_gradient(batch_y, batch_tx, w)
-        w = w - gamma * grad
-    loss = compute_mse(batch_y, batch_tx, w)
-    return w, loss
-    
-
 def least_squares(y, tx):
-    """Least squares regression using normal equations"""
+    """
+    Linear regression model using normal equation 
+
+    Parameters:
+    ----------
+    y : np.ndarray
+        Vector of N observed values
+    tx: np.ndarray
+        An N x D matrix, where N is a number of predictor variables and D is the number of features
+
+    Returns:
+    ----------
+    w : np.ndarray
+        Vector of D model weights 
+    loss: 
+        A non-negative floating point
+    
+    """
     w = np.linalg.solve(tx.T @ tx, tx.T @ y)
     e = y - tx @ w 
     loss = 1/len(e) * e @ e
@@ -116,7 +151,27 @@ def least_squares(y, tx):
 
 
 def ridge_regression(y, tx, lambda_):
-    """Ridge regression using normal equations"""
+    """
+    Ridge regression model using normal equations
+
+    Parameters:
+    ----------
+    y : np.ndarray
+        Vector of N observed values
+    tx: np.ndarray
+        An N x D matrix, where N is a number of predictor variables and D is the number of features
+    lambda_ : float
+        Regularization parameter
+
+    Returns:
+    ----------
+    w : np.ndarray
+        Vector of D model weights 
+    loss: 
+        A non-negative floating point
+
+    """
+
     lambda1 = 2 * len(y) * lambda_
     inv = tx.T @ tx + lambda1 * np.eye(tx.shape[1])
     w = np.linalg.inv(inv) @ tx.T @ y
@@ -128,44 +183,84 @@ def ridge_regression(y, tx, lambda_):
 
 
 def sigmoid(t):
-    """apply the sigmoid function on t."""
+    """Apply the sigmoid function on t"""
     return 1/(1 + np.exp(-t))
 
-def compute_logistic_grad(y, tx, w):
-    return 1 / len(y) * (tx.T @ (h_model(tx, w)-y))
-
 def compute_logistic_gradient(y, tx, w):
-    """compute the gradient of cross entropy loss with respect to the weights"""
+    """Compute the gradient of cross entropy loss with respect to the weights"""
     mu = np.apply_along_axis(sigmoid, 0, tx @ w)
     return tx.T @ (mu - y)
 
-def h_model(tx ,w):
-    return sigmoid(-w @ tx)
-
 def compute_cross_entropy_loss(y, tx, w):
-    """compute the loss: negative log likelihood."""
+    """Compute the negative log likelihood for logistic regression"""
     mu = np.apply_along_axis(sigmoid, 0, tx @ w)
     return - y.T @ np.log(mu) - (np.ones(mu.shape) - y).T @ np.log(np.ones(mu.shape) - mu)
 
 
 def logistic_regression_gd(y, tx, initial_w, max_iters, gamma):
-    """Logistic regression using gradient descent"""
+    """
+    Logistic regression model using gradient descent
+
+    Parameters:
+    ----------
+    y : np.ndarray
+        Vector of N observed values
+    tx: np.ndarray
+        An N x D matrix, where N is a number of predictor variables and D is the number of features
+    initial_w : np.ndarray
+        The initial vector of D model weights
+    max_iters: float, default=1
+        The maximum number of iterations over the training data (aka epochs)
+    gamma: float
+        Learning rate 
+
+    Returns:
+    ----------
+    w : np.ndarray
+        Vector of D model weights 
+    loss: float
+        A non-negative floating point
+
+    """
     w = initial_w
     for n_iter in range(max_iters):
-        gradient = compute_logistic_grad(y ,tx ,w)
+        gradient = compute_logistic_gradient(y ,tx ,w)
         w = w - gamma * gradient
     loss = compute_cross_entropy_loss(y, tx, w)
     return w, loss
 
 def compute_logistic_hessian(tx, w):
-    """return the Hessian of the loss function."""
+    """Return the Hessian of the loss function"""
     mu = np.apply_along_axis(sigmoid, 0, tx @ w)
     diag = np.multiply(mu, 1-mu).T[0]
     S = np.diag(diag.T)
     return tx.T @ S @ tx
 
 def logistic_regression_newton_method(y, tx, initial_w, max_iters, gamma):
-    """Logistic regression using Newton's method, return the loss and  w."""
+    """
+    Logistic regression model using Newton's method
+
+    Parameters:
+    ----------
+    y : np.ndarray
+        Vector of N observed values
+    tx: np.ndarray
+        An N x D matrix, where N is a number of predictor variables and D is the number of features
+    initial_w : np.ndarray
+        The initial vector of D model weights
+    max_iters: float, default=1
+        The maximum number of iterations over the training data (aka epochs)
+    gamma: float
+        Learning rate 
+
+    Returns:
+    ----------
+    w : np.ndarray
+        Vector of D model weights 
+    loss: float
+        A non-negative floating point
+    """
+
     w = initial_w
     for n_iter in range(max_iters):
         gradient = compute_logistic_gradient(y, tx, w)
@@ -176,10 +271,33 @@ def logistic_regression_newton_method(y, tx, initial_w, max_iters, gamma):
     return w, loss
 
 def compute_reg_cross_entropy_loss(y, tx, w, lambda_):
+    """Compute loss function for regularized logistic regression"""
     return compute_cross_entropy_loss(y, tx, w) + lambda_ / 2 * w @ w
 
 def reg_logistic_regression_gd(y, tx, lambda_, initial_w, max_iters, gamma):
-    """Regularized logistic regression using gradient descent"""
+    """
+    Regularized logistic regression using gradient descent
+    
+    Parameters:
+    ----------
+    y : np.ndarray
+        Vector of N observed values
+    tx: np.ndarray
+        An N x D matrix, where N is a number of predictor variables and D is the number of featres
+    initial_w : np.ndarray
+        The initial vector of D model weights
+    max_iters: float, default=1
+        The maximum number of iterations over the training data (aka epochs)
+    gamma: float
+        Learning rate 
+
+    Returns:
+    ----------
+    w : np.ndarray
+        Vector of D model weights 
+    loss: float
+        A non-negative floating point
+    """
     w = initial_w
     for n_iter in range(max_iters):
         gradient = compute_logistic_gradient(y, tx, w)
@@ -189,4 +307,64 @@ def reg_logistic_regression_gd(y, tx, lambda_, initial_w, max_iters, gamma):
         w = w - gamma *  regularized_gradient
     loss = compute_reg_cross_entropy_loss(y, tx, w)
     return w, loss
-    
+
+
+""" HELPERS """
+
+def build_polynomial_features(x, degree):
+    phi = np.zeros((len(x), degree + 1))
+    for i in range(degree+1):
+        phi[:, i] = x**i 
+    return phi
+
+
+def split_data(x, y, ratio, seed=1):
+    """
+    split the dataset based on the split ratio. If ratio is 0.8 
+    you will have 80% of your data set dedicated to training 
+    and the rest dedicated to testing
+    """
+    # set seed
+    np.random.seed(seed)
+    x = np.random.permutation(x)
+    np.random.seed(seed)
+    y = np.random.permutation(y)
+
+    ind = int(len(x) * ratio)
+
+    train_x = x[ : ind]
+    test_x = x[ind : ]
+
+    train_y = y[ : ind]
+    test_y = y[ind : ]
+
+    return train_x, test_x, train_y, test_y
+
+
+def build_k_indices(y, k_fold, seed):
+    """build k indices for k-fold."""
+    num_row = y.shape[0]
+    interval = int(num_row / k_fold)
+    np.random.seed(seed)
+    indices = np.random.permutation(num_row)
+    k_indices = [indices[k * interval: (k + 1) * interval]
+                 for k in range(k_fold)]
+    return np.array(k_indices)
+
+
+def cross_validation_score(model, x , y, loss, cv, seed):
+    k_indices = build_k_indices(y, cv, seed)
+    scores = np.zeros(cv)
+    for fold in range(cv):
+        x_test = x[k_indices[fold]] 
+        y_test = y[k_indices[fold]]
+
+        selector = [x for x in range(y.shape[0]) if x not in set(k_indices[fold])]
+        y_train = y[selector]
+        x_train = x[selector]
+
+        w, train_loss = model(y_train,x_train)
+        test_loss = loss(y_test, x_test, w)
+        scores[fold] = np.array([train_loss, test_loss])
+
+    return scores
