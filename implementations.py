@@ -344,6 +344,10 @@ def logistic_regression_newton_method(y, tx, initial_w, max_iters, batch_size, r
         The initial vector of D model weights
     max_iters: float, default=1
         The maximum number of iterations over the training data (aka epochs)
+    batch_size: float
+        The number of training examples utilized in one iteration.
+    ratio: float
+        The train:test ratio
     gamma: float
         Learning rate 
 
@@ -394,9 +398,9 @@ def compute_reg_cross_entropy_loss(y, tx, w, lambda_):
     """Compute loss function for regularized logistic regression"""
     return compute_cross_entropy_loss(y, tx, w) + lambda_ / 2 * w @ w
 
-def reg_logistic_regression_gd(y, tx, lambda_, initial_w, max_iters, gamma):
+def reg_logistic_regression_newton(y, tx, lambda_, initial_w, max_iters, batch_size, ratio, gamma):
     """
-    Regularized logistic regression using gradient descent
+    Regularized logistic regression using Newton method
     
     Parameters:
     ----------
@@ -419,13 +423,29 @@ def reg_logistic_regression_gd(y, tx, lambda_, initial_w, max_iters, gamma):
         A non-negative floating point
     """
     w = initial_w
+    train_x, test_x, train_y, test_y = split_data(tx, y, ratio, seed=1)
+    num_batches = int(len(y)/batch_size)
+
     for n_iter in range(max_iters):
-        gradient = compute_logistic_gradient(y, tx, w)
-        regularized_gradient = gradient + 2 * lambda_ * w
-        ##hessian = compute_logistic_hessian(y, tx, w)
-        ## regularized_hessian = hessian + 2 * lambda_ * np.eye(len(hessian))
-        w = w - gamma *  regularized_gradient
-    loss = compute_reg_cross_entropy_loss(y, tx, w)
+        losses = []
+        for batch_y, batch_tx in batch_iter(train_y, train_x, batch_size, num_batches = num_batches):
+
+            gradient = compute_logistic_gradient(batch_y, batch_tx, w)
+            regularized_gradient = gradient + 2 * lambda_ * w
+            hessian = compute_logistic_hessian(batch_tx, w)
+            regularized_hessian = hessian + 2 * lambda_ * np.eye(len(hessian))
+            update_vector = np.linalg.lstsq(regularized_hessian, regularized_gradient)[0]
+            w = w - gamma *  update_vector
+
+            losses.append(compute_reg_cross_entropy_loss(train_y, train_x, w, lambda_))
+
+        train_loss = sum(losses) / (num_batches + 1)
+        test_loss = compute_reg_cross_entropy_loss(test_y, test_x, w, lambda_)
+        y_pred = predict_logistic_labels(w, test_x)
+        test_accuracy = model_accuracy(y_pred, test_y)
+        print(f'epoch: {n_iter}, train_loss: {train_loss}, test_loss: {test_loss}, test accuracy: {test_accuracy}')
+
+    loss = compute_reg_cross_entropy_loss(y, tx, w, lambda_)
     return w, loss
 
 
