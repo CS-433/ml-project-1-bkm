@@ -306,7 +306,7 @@ def reg_logistic_regression_gd(y, tx, lambda_, initial_w, max_iters, gamma):
         ##hessian = compute_logistic_hessian(y, tx, w)
         ## regularized_hessian = hessian + 2 * lambda_ * np.eye(len(hessian))
         w = w - gamma *  regularized_gradient
-    loss = compute_reg_cross_entropy_loss(y, tx, w)
+    loss = compute_reg_cross_entropy_loss(y, tx, w, lam)
     return w, loss
 
 def predict_logistic_regression(w, x):
