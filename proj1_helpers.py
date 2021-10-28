@@ -48,41 +48,21 @@ def create_csv_submission(ids, y_pred, name):
             writer.writerow({'Id':int(r1),'Prediction':int(r2)})
 
 
-def least_squares_gd(y, tx, initial_w, max_iters, gamma):
-     """Linear regression using gradient descent"""
-
-def least_squares_sgd(y, tx, initial_w, max_iters, gamma): 
-    """Linear regression using stochastic gradient descent"""
-
-def least_squares(y, tx):
-    """Least squares regression using normal equations"""
-
-def ridge_regression(y, tx, lambda_):
-    """Ridge regression using normal equations"""
-
-def logistic_regression(y, tx, initial_w, max_iters, gamma):
-    """Logistic regression using gradient descent or SGD"""
-
-def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
-    """Regularized logistic regression using gradient descent or SGD"""
+#def least_squares_gd(y, tx, initial_w, max_iters, gamma):
+#     """Linear regression using gradient descent"""
+#
+#def least_squares_sgd(y, tx, initial_w, max_iters, gamma): 
+#    """Linear regression using stochastic gradient descent"""
+#
+#def least_squares(y, tx):
+#    """Least squares regression using normal equations"""
+#
+#def ridge_regression(y, tx, lambda_):
+#    """Ridge regression using normal equations"""
+#
+#def logistic_regression(y, tx, initial_w, max_iters, gamma):
+#    """Logistic regression using gradient descent or SGD"""
+#
+#def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
+#    """Regularized logistic regression using gradient descent or SGD"""
     
-## Removing outliers
-def undefined_to_nans(tX, nan_value = -999):
-    tX[tX == nan_value] = np.nan
-    return tX
-
-def nans_to_means(tX):
-    col_mean = np.nanmean(tX, axis=0)
-    inds = np.where(np.isnan(tX))
-    tX[inds] = np.take(col_mean, inds[1])
-    return tX
-
-def remove_zscore_outliers(tX):
-    col_mean = np.nanmean(tX, axis=0)
-    std_mean = np.nanstd(tX, axis=0)
-    z_score = np.zeros(tX.shape)
-    for col in range(30):
-        z_score[:,col] = (tX[:,col] - col_mean[col])/std_mean[col]
-    tX[z_score >=3] = np.nan
-    tX[z_score <=-3] = np.nan
-    return tX
