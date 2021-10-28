@@ -146,12 +146,15 @@ def cross_validation_score(model, x , y, loss, cv, seed):
 
     Returns:
     ----------
-    scores : np.ndarray
-        A cv x 2 matrix, the first column contains the train losses, the second containt the test loss for each fold
+    train_scores : np.ndarray
+        A vector contains the train losses, the second containt the test loss for each fold
+    test_scores : np.ndarray
     """
 
     k_indices = build_k_indices(y, cv, seed)
-    scores = np.zeros(cv)
+    train_scores = np.zeros(cv)
+    test_scores = np.zeros(cv)
+
     for fold in range(cv):
         x_test = x[k_indices[fold]] 
         y_test = y[k_indices[fold]]
@@ -161,11 +164,10 @@ def cross_validation_score(model, x , y, loss, cv, seed):
         x_train = x[selector]
 
         w, train_loss = model(y_train,x_train)
-        train_loss = loss(y_train, x_train, w)
-        test_loss = loss(y_test, x_test, w)
-        scores[fold] = np.array([train_loss, test_loss])
+        train_scores[fold] = train_loss
+        test_scores[fold] = loss(y_test, x_test, w)
 
-    return scores
+    return train_scores, test_scores
 
 """LINEAR REGRESSION"""
 
@@ -235,7 +237,7 @@ def least_squares(y, tx):
         A non-negative floating point
     
     """
-    w = np.linalg.solve(tx.T @ tx, tx.T @ y)
+    w = np.linalg.lstsq(tx.T @ tx, tx.T @ y)[0]
     e = y - tx @ w 
     loss = 1/len(e) * e @ e
     return w , loss
@@ -375,10 +377,12 @@ def logistic_regression_newton_method(y, tx, initial_w, max_iters, batch_size, r
             losses.append(compute_cross_entropy_loss(train_y, train_x, w))
             
         train_loss = sum(losses) / (num_batches + 1)
-        test_loss = compute_cross_entropy_loss(test_y, test_x, w)
-        y_pred = predict_logistic_labels(w, test_x)
-        test_accuracy = model_accuracy(y_pred, test_y)
-        print(f'epoch: {n_iter}, train_loss: {train_loss}, test_loss: {test_loss}, test accuracy: {test_accuracy}')
+
+        if ratio < 1:
+            test_loss = compute_cross_entropy_loss(test_y, test_x, w)
+            y_pred = predict_logistic_labels(w, test_x)
+            test_accuracy = model_accuracy(y_pred, test_y)
+            print(f'epoch: {n_iter}, train_loss: {train_loss}, test_loss: {test_loss}, test accuracy: {test_accuracy}')
 
     loss = compute_cross_entropy_loss(y, tx, w)
     return w, loss
@@ -452,7 +456,7 @@ def reg_logistic_regression_newton(y, tx, lambda_, initial_w, max_iters, batch_s
 
 """VISUALIZATION"""
 
-def plot_correlation_heatmap():
+def plot_correlation_heatmap(tX):
 
     features = ['DER_mass_MMC', 'DER_mass_transverse_met_lep', 'DER_mass_vis',
        'DER_pt_h', 'DER_deltaeta_jet_jet', 'DER_mass_jet_jet',
