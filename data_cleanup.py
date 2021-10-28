@@ -21,3 +21,7 @@ def remove_zscore_outliers(tX):
     tX[z_score >=3] = np.nan
     tX[z_score <=-3] = np.nan
     return tX
+
+def remowe_nans(tX, y):
+    ind = ~np.isnan(tX).any(axis=1)
+    return tX[ind], y[ind]
