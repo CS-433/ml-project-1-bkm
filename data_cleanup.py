@@ -55,14 +55,25 @@ def split_on_jets(tx, y=[]):
     tx_1 = tx[jets == 1]
     tx_2 = tx[jets == 2]
     tx_3 = tx[jets == 3]
-    if list(y):
-        y_0 = y[jets == 0]
-        y_1 = y[jets == 1]
-        y_2 = y[jets == 2]
-        y_3 = y[jets == 3]
-        return [tx_0, tx_1, tx_2, tx_3], [y_0, y_1, y_2, y_3] 
-    else:
-        return [tx_0, tx_1, tx_2, tx_3]
+    y_0 = y[jets == 0]
+    y_1 = y[jets == 1]
+    y_2 = y[jets == 2]
+    y_3 = y[jets == 3]
+    return [tx_0, tx_1, tx_2, tx_3], [y_0, y_1, y_2, y_3] 
+
+def split_on_jets_test(tx, idx):
+    jets = tx[:,22]
+    tx = np.delete(tx, 22, 1) 
+    tx_0 = tx[jets == 0]
+    tx_1 = tx[jets == 1]
+    tx_2 = tx[jets == 2]
+    tx_3 = tx[jets == 3]
+    idx_0 = idx[jets == 0]
+    idx_1 = idx[jets == 1]
+    idx_2 = idx[jets == 2]
+    idx_3 = idx[jets == 3]
+    return [tx_0, tx_1, tx_2, tx_3], [idx_0, idx_1, idx_2, idx_3] 
+    
 
 def standardize(tx):
     return (tx - np.mean(tx, axis=0)) / np.std(tx, axis=0)
@@ -81,8 +92,8 @@ def preprocess_train(tx, y):
     return xs, ys
         
 
-def preprocess_test(tx):
-    xs = split_on_jets(tx)
+def preprocess_test(tx, idx):
+    xs, idx = split_on_jets(tx, idx)
     for i in range(4):
         xs[i] = undefined_to_nans(xs[i], nan_value = -999)
         xs[i] = nan_features_to_zero(xs[i], threshold=0.8)
@@ -91,4 +102,4 @@ def preprocess_test(tx):
         xs[i] = nans_to_medians(xs[i])
         xs[i] = add_bias(xs[i])
         print(f'x_{i} shape: {xs[i].shape}')
-    return xs
+    return xs, idx

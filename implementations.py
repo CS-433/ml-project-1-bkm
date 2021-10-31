@@ -53,7 +53,7 @@ def load_csv_data(data_path, sub_sample=False):
 def predict_labels(weights, data):
     """Generates class predictions given weights, and a test data matrix"""
     y_pred = np.dot(data, weights)
-    y_pred[np.where(y_pred <= 0)] = -1
+    y_pred[np.where(y_pred <= 0)] = 0
     y_pred[np.where(y_pred > 0)] = 1
     
     return y_pred
@@ -271,7 +271,7 @@ def ridge_regression(y, tx, lambda_):
 
     lambda1 = 2 * len(y) * lambda_
     inv = tx.T @ tx + lambda1 * np.eye(tx.shape[1])
-    w = np.linalg.inv(inv) @ tx.T @ y
+    w = np.linalg.solve(inv, tx.T @ y)
     loss = compute_mse(y, tx ,w)
     return w, loss
 
@@ -397,7 +397,7 @@ def predict_logistic_labels(w, tx):
     return y_pred
 
 def model_accuracy(y_pred, y_true):
-    return 1 - (sum(np.abs(y_pred-y_true))/len(y_true))
+    return (1 - (sum(np.abs(y_pred-y_true)))/len(y_true))
 
 
 def compute_reg_cross_entropy_loss(y, tx, w, lambda_):
