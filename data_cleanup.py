@@ -43,3 +43,26 @@ def nan_features_to_zero(tx, threshold=0.8):
     tx[:,nan_features]=0
         
     return tx
+
+def add_bias(tx):
+    return np.column_stack((tX,np.ones(len(tX))))
+
+
+def split_on_jets(tX, y):
+    tx_0 = tX[np.where(tX[:,22] == 0)]
+    tx_1 = tX[np.where(tX[:,22] == 1)]
+    tx_2 = tX[np.where(tX[:,22] == 2)]
+    tx_3 = tX[np.where(tX[:,22] == 3)]
+    y_0 = tX[np.where(tX[:,22] == 0)]
+    y_1 = tX[np.where(tX[:,22] == 1)]
+    y_2 = tX[np.where(tX[:,22] == 2)]
+    y_3 = tX[np.where(tX[:,22] == 3)]
+    return tx_0, tx_1, tx_2, tx_3, y_0, y_1, y_2, y_3 
+
+
+def preprocess_train(tX, y):
+    pass
+
+
+def preprocess_test(tX):
+    pass
