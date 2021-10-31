@@ -1,8 +1,32 @@
 # -*- coding: utf-8 -*-
 """some helper functions for project 1."""
-import csv
 import numpy as np
-import matplotlib.pyplot as plt
+from helpers import *
+
+def batch_iter(y, tx, batch_size, num_batches=1, shuffle=True):
+    """
+    Generate a minibatch iterator for a dataset.
+    Takes as input two iterables (here the output desired values 'y' and the input data 'tx')
+    Outputs an iterator which gives mini-batches of `batch_size` matching elements from `y` and `tx`.
+    Data can be randomly shuffled to avoid ordering in the original data messing with the randomness of the minibatches.
+    Example of use :
+    for minibatch_y, minibatch_tx in batch_iter(y, tx, 32):
+        <DO-SOMETHING>
+    """
+    data_size = len(y)
+
+    if shuffle:
+        shuffle_indices = np.random.permutation(np.arange(data_size))
+        shuffled_y = y[shuffle_indices]
+        shuffled_tx = tx[shuffle_indices]
+    else:
+        shuffled_y = y
+        shuffled_tx = tx
+    for batch_num in range(num_batches):
+        start_index = batch_num * batch_size
+        end_index = min((batch_num + 1) * batch_size, data_size)
+        if start_index != end_index:
+            yield shuffled_y[start_index:end_index], shuffled_tx[start_index:end_index]
 
 
 def build_polynomial_features(x, degree):
@@ -139,7 +163,6 @@ def least_squares_gd(y, tx, initial_w, max_iters, gamma, num_batches=1):
         A non-negative floating point
     
     """
-
     w = initial_w
     for n_iter in range(max_iters):
         for batch_y, batch_tx in batch_iter(y, tx, 1, num_batches = num_batches):
@@ -147,8 +170,11 @@ def least_squares_gd(y, tx, initial_w, max_iters, gamma, num_batches=1):
             w = w - gamma * gradient
     loss = compute_mse(y, tx ,w)
     return w, loss
-    
 
+def least_squares_sgd(y, tx, initial_w, max_iters, gamma): 
+    """Wrapper function for Linear regression using stochastic gradient descent with batch size=1"""
+    return least_squares_gd(y, tx, initial_w, max_iters, gamma, num_batches=len(y))
+    
 def least_squares(y, tx):
     """
     Linear regression model using normal equation 
@@ -198,10 +224,9 @@ def ridge_regression(y, tx, lambda_):
         A non-negative floating point
 
     """
-
     lambda1 = 2 * len(y) * lambda_
     inv = tx.T @ tx + lambda1 * np.eye(tx.shape[1])
-    w = np.linalg.solve(inv, tx.T @ y)
+    w = np.linalg.lstsq(inv, tx.T @ y)[0]
     loss = compute_mse(y, tx ,w)
     return w, loss
 
@@ -225,7 +250,7 @@ def compute_cross_entropy_loss(y, tx, w):
     return - (1/N) *  y.T @ np.log(mu) - (np.ones(mu.shape) - y).T @ np.log(np.ones(mu.shape) - mu)
 
 
-def logistic_regression_gd(y, tx, initial_w, max_iters, gamma):
+def logistic_regression(y, tx, initial_w, max_iters, gamma):
     """
     Logistic regression model using gradient descent
 
@@ -299,16 +324,13 @@ def logistic_regression_newton_method(y, tx, initial_w, max_iters, batch_size, r
     for n_iter in range(max_iters):
         losses = []
         for batch_y, batch_tx in batch_iter(train_y, train_x, batch_size, num_batches = num_batches):
-
             gradient = compute_logistic_gradient(batch_y, batch_tx, w)
             hessian = compute_logistic_hessian(batch_tx, w)
             update_vector = np.linalg.lstsq(hessian, gradient)[0]
             w = w - gamma *  update_vector
-
             losses.append(compute_cross_entropy_loss(train_y, train_x, w))
             
         train_loss = sum(losses) / (num_batches + 1)
-
         if ratio < 1:
             test_loss = compute_cross_entropy_loss(test_y, test_x, w)
             y_pred = predict_logistic_labels(w, test_x)
@@ -323,18 +345,16 @@ def predict_logistic_labels(w, tx):
     y_pred = sigmoid(tx @ w)
     y_pred[np.where(y_pred <= 0.5)] = 0
     y_pred[np.where(y_pred > 0.5)] = 1
-    
     return y_pred
 
 def model_accuracy(y_pred, y_true):
     return (1 - (sum(np.abs(y_pred-y_true)))/len(y_true))
 
-
 def compute_reg_cross_entropy_loss(y, tx, w, lambda_):
     """Compute loss function for regularized logistic regression"""
     return compute_cross_entropy_loss(y, tx, w) + lambda_ / 2 * w @ w
 
-def reg_logistic_regression_newton(y, tx, lambda_, initial_w, max_iters, batch_size, ratio, gamma):
+def reg_logistic_regression_newton(y, tx, lambda_, initial_w, max_iters, gamma, batch_size, ratio):
     """
     Regularized logistic regression using Newton method
     
@@ -374,122 +394,20 @@ def reg_logistic_regression_newton(y, tx, lambda_, initial_w, max_iters, batch_s
             w = w - gamma *  update_vector
 
             losses.append(compute_reg_cross_entropy_loss(train_y, train_x, w, lambda_))
-
-        train_loss = sum(losses) / (num_batches + 1)
-        test_loss = compute_reg_cross_entropy_loss(test_y, test_x, w, lambda_)
-        y_pred = predict_logistic_labels(w, test_x)
-        test_accuracy = model_accuracy(y_pred, test_y)
-        print(f'epoch: {n_iter}, train_loss: {train_loss}, test_loss: {test_loss}, test accuracy: {test_accuracy}')
+            
+        if ratio < 1:
+            train_loss = sum(losses) / (num_batches + 1)
+            test_loss = compute_reg_cross_entropy_loss(test_y, test_x, w, lambda_)
+            y_pred = predict_logistic_labels(w, test_x)
+            test_accuracy = model_accuracy(y_pred, test_y)
+            print(f'epoch: {n_iter}, train_loss: {train_loss}, test_loss: {test_loss}, test accuracy: {test_accuracy}')
 
     loss = compute_reg_cross_entropy_loss(y, tx, w, lambda_)
     return w, loss
 
-
-"""VISUALIZATION"""
-
-def plot_correlation_heatmap(tx):
-
-    features = ['DER_mass_MMC', 'DER_mass_transverse_met_lep', 'DER_mass_vis',
-       'DER_pt_h', 'DER_deltaeta_jet_jet', 'DER_mass_jet_jet',
-       'DER_prodeta_jet_jet', 'DER_deltar_tau_lep', 'DER_pt_tot', 'DER_sum_pt',
-       'DER_pt_ratio_lep_tau', 'DER_met_phi_centrality',
-       'DER_lep_eta_centrality', 'PRI_tau_pt', 'PRI_tau_eta', 'PRI_tau_phi',
-       'PRI_lep_pt', 'PRI_lep_eta', 'PRI_lep_phi', 'PRI_met', 'PRI_met_phi',
-       'PRI_met_sumet', 'PRI_jet_num', 'PRI_jet_leading_pt',
-       'PRI_jet_leading_eta', 'PRI_jet_leading_phi', 'PRI_jet_subleading_pt',
-       'PRI_jet_subleading_eta', 'PRI_jet_subleading_phi', 'PRI_jet_all_pt']
-
-    corr = np.corrcoef(tx, rowvar=False)
-
-
-    fig, ax = plt.subplots(figsize=(25,25))
-    im = ax.imshow(corr,  cmap='viridis')
-    ax.set_xticks(np.arange(30))
-    ax.set_yticks(np.arange(30))
-    ax.set_xticklabels(features)
-    ax.set_yticklabels(features)
-
-
-    plt.setp(ax.get_xticklabels(), rotation=90, ha="right")
-
-    for i in range(30):
-        for j in range(30):
-            text = ax.text(j, i, "{:.2f}".format(corr[i, j]),ha="center", va="center", color="w")
-
-    ax.set_title("Feature correlations")
-    fig.tight_layout()
-    plt.show()
-
-def plot_feature_distribution(tx, y, feature, bins):
-
-    features = ['DER_mass_MMC', 'DER_mass_transverse_met_lep', 'DER_mass_vis',
-       'DER_pt_h', 'DER_deltaeta_jet_jet', 'DER_mass_jet_jet',
-       'DER_prodeta_jet_jet', 'DER_deltar_tau_lep', 'DER_pt_tot', 'DER_sum_pt',
-       'DER_pt_ratio_lep_tau', 'DER_met_phi_centrality',
-       'DER_lep_eta_centrality', 'PRI_tau_pt', 'PRI_tau_eta', 'PRI_tau_phi',
-       'PRI_lep_pt', 'PRI_lep_eta', 'PRI_lep_phi', 'PRI_met', 'PRI_met_phi',
-       'PRI_met_sumet', 'PRI_jet_num', 'PRI_jet_leading_pt',
-       'PRI_jet_leading_eta', 'PRI_jet_leading_phi', 'PRI_jet_subleading_pt',
-       'PRI_jet_subleading_eta', 'PRI_jet_subleading_phi', 'PRI_jet_all_pt']
-    
-    idx = np.arange(30)
-    feature_by_index = {features[i]: idx[i] for i in range(30)}
-
-    data = tx.T[feature_by_index[feature]]
-    
-    data_1 = data[np.where(y == 1)]
-    data_0 = data[np.where(y == 0)]
-
-    fig, ax = plt.subplots(figsize=(10,10))
-    ax.hist(data_1, bins=bins, color='red', alpha=0.5, label='1')
-    ax.hist(data_0, bins=bins, color='blue',alpha=0.5, label='0')
-    ax.legend()
-    ax.set_title(f'distribution of {feature}')
-    ax.set_ylabel('Frequency')
-    plt.show()
-
-
-    
-def scatter_feature_distribution(tx, y, feature_1, feature_2, filter=None):
-
-    features = ['DER_mass_MMC', 'DER_mass_transverse_met_lep', 'DER_mass_vis',
-       'DER_pt_h', 'DER_deltaeta_jet_jet', 'DER_mass_jet_jet',
-       'DER_prodeta_jet_jet', 'DER_deltar_tau_lep', 'DER_pt_tot', 'DER_sum_pt',
-       'DER_pt_ratio_lep_tau', 'DER_met_phi_centrality',
-       'DER_lep_eta_centrality', 'PRI_tau_pt', 'PRI_tau_eta', 'PRI_tau_phi',
-       'PRI_lep_pt', 'PRI_lep_eta', 'PRI_lep_phi', 'PRI_met', 'PRI_met_phi',
-       'PRI_met_sumet', 'PRI_jet_num', 'PRI_jet_leading_pt',
-       'PRI_jet_leading_eta', 'PRI_jet_leading_phi', 'PRI_jet_subleading_pt',
-       'PRI_jet_subleading_eta', 'PRI_jet_subleading_phi', 'PRI_jet_all_pt']
-    
-    idx = np.arange(30)
-    feature_by_index = {features[i]: idx[i] for i in range(30)}
-
-    data_1 = tx.T[feature_by_index[feature_1]]
-    data_2 = tx.T[feature_by_index[feature_2]]
-    
-    data_1_0 = data_1[np.where(y == 0)]
-    data_1_1 = data_1[np.where(y == 1)]
-    data_2_0 = data_2[np.where(y == 0)]
-    data_2_1 = data_2[np.where(y == 1)]
-
-    fig, ax = plt.subplots(figsize=(10,10))
-    
-
-    if filter == 1:
-        ax.scatter(data_1_1, data_2_1, color='red', alpha=0.5, label='1')
-    elif filter == 0:
-        ax.scatter(data_1_0, data_2_0, color='blue', alpha=0.5, label='0')
-    else: 
-        ax.scatter(data_1_1, data_2_1, color='red', alpha=0.5, label='1')
-        ax.scatter(data_1_0, data_2_0, color='blue', alpha=0.5, label='0')
-
-
-    ax.legend()
-    ax.set_title(f'scatter plot of {feature_1} and {feature_2}')
-    ax.set_xlabel(f'{feature_1}')
-    ax.set_ylabel(f'{feature_2}')
-    plt.show()
+def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
+    """Wrapper function for Regularized logistic regression using gradient descent or SGD"""
+    return reg_logistic_regression_newton(y, tx, lambda_, initial_w, max_iters, batch_size=len(y), ratio=1, gamma=gamma)
 
 
 

@@ -20,16 +20,14 @@ def load_csv_data(data_path, sub_sample=False):
         yb = yb[::50]
         input_data = input_data[::50]
         ids = ids[::50]
-
     return yb, input_data, ids
 
 
 def predict_labels(weights, data):
     """Generates class predictions given weights, and a test data matrix"""
     y_pred = np.dot(data, weights)
-    y_pred[np.where(y_pred <= 0)] = -1
+    y_pred[np.where(y_pred <= 0)] = 0
     y_pred[np.where(y_pred > 0)] = 1
-    
     return y_pred
 
 
@@ -48,21 +46,6 @@ def create_csv_submission(ids, y_pred, name):
             writer.writerow({'Id':int(r1),'Prediction':int(r2)})
 
 
-#def least_squares_gd(y, tx, initial_w, max_iters, gamma):
-#     """Linear regression using gradient descent"""
-#
-#def least_squares_sgd(y, tx, initial_w, max_iters, gamma): 
-#    """Linear regression using stochastic gradient descent"""
-#
-#def least_squares(y, tx):
-#    """Least squares regression using normal equations"""
-#
-#def ridge_regression(y, tx, lambda_):
-#    """Ridge regression using normal equations"""
-#
-#def logistic_regression(y, tx, initial_w, max_iters, gamma):
-#    """Logistic regression using gradient descent or SGD"""
-#
-#def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
-#    """Regularized logistic regression using gradient descent or SGD"""
+
+
     
