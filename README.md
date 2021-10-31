@@ -6,7 +6,7 @@ This repository contains the code for the project1 of the Machine Learning Cours
 
    - Benedek Harsányi (xxxxxx)
    - kamil czerniak (xxxxxx)
-   - Mohamed Allouch (342553)
+   - Mohamed Allouch (342708)
 
 ### Dependencies
 
