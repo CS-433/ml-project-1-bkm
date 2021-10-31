@@ -22,7 +22,7 @@ def remove_zscore_outliers(tx):
     col_mean = np.nanmean(tx, axis=0)
     std_mean = np.nanstd(tx, axis=0)
     z_score = np.zeros(tx.shape)
-    for col in range(30):
+    for col in range(29):
         z_score[:,col] = (tx[:,col] - col_mean[col])/std_mean[col]
     tx[z_score >=3] = np.nan
     tx[z_score <=-3] = np.nan
@@ -43,3 +43,52 @@ def nan_features_to_zero(tx, threshold=0.8):
     tx[:,nan_features]=0
         
     return tx
+
+def add_bias(tx):
+    return np.column_stack((tx,np.ones(len(tx))))
+
+
+def split_on_jets(tx, y=[]):
+    jets = tx[:,22]
+    tx = np.delete(tx, 22, 1) 
+    tx_0 = tx[jets == 0]
+    tx_1 = tx[jets == 1]
+    tx_2 = tx[jets == 2]
+    tx_3 = tx[jets == 3]
+    if list(y):
+        y_0 = y[jets == 0]
+        y_1 = y[jets == 1]
+        y_2 = y[jets == 2]
+        y_3 = y[jets == 3]
+        return [tx_0, tx_1, tx_2, tx_3], [y_0, y_1, y_2, y_3] 
+    else:
+        return [tx_0, tx_1, tx_2, tx_3]
+
+def standardize(tx):
+    return (tx - np.mean(tx, axis=0)) / np.std(tx, axis=0)
+
+def preprocess_train(tx, y):
+    xs, ys = split_on_jets(tx, y)
+    for i in range(4):
+        xs[i] = undefined_to_nans(xs[i], nan_value = -999)
+        xs[i] = nan_features_to_zero(xs[i], threshold=0.8)
+        xs[i] = nans_to_medians(xs[i])
+        xs[i] = remove_zscore_outliers(xs[i])
+        xs[i] = nans_to_medians(xs[i])
+        xs[i] = add_bias(xs[i])
+        ys[i][ys[i] == -1] = 0
+        print(f'x_{i} shape: {xs[i].shape}, y_{i} shape: {ys[i].shape}')
+    return xs, ys
+        
+
+def preprocess_test(tx):
+    xs = split_on_jets(tx)
+    for i in range(4):
+        xs[i] = undefined_to_nans(xs[i], nan_value = -999)
+        xs[i] = nan_features_to_zero(xs[i], threshold=0.8)
+        xs[i] = nans_to_medians(xs[i])
+        xs[i] = remove_zscore_outliers(xs[i])
+        xs[i] = nans_to_medians(xs[i])
+        xs[i] = add_bias(xs[i])
+        print(f'x_{i} shape: {xs[i].shape}')
+    return xs
