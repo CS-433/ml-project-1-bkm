@@ -2,6 +2,7 @@
 """some helper functions for project 1."""
 import numpy as np
 from helpers import *
+import logging as log
 
 def batch_iter(y, tx, batch_size, num_batches=1, shuffle=True):
     """
@@ -335,7 +336,7 @@ def logistic_regression_newton_method(y, tx, initial_w, max_iters, batch_size, r
             test_loss = compute_cross_entropy_loss(test_y, test_x, w)
             y_pred = predict_logistic_labels(w, test_x)
             test_accuracy = model_accuracy(y_pred, test_y)
-            print(f'epoch: {n_iter}, train_loss: {train_loss}, test_loss: {test_loss}, test accuracy: {test_accuracy}')
+            log.info(f'epoch: {n_iter}, train_loss: {train_loss}, test_loss: {test_loss}, test accuracy: {test_accuracy}')
 
     loss = compute_cross_entropy_loss(y, tx, w)
     return w, loss
@@ -400,7 +401,7 @@ def reg_logistic_regression_newton(y, tx, lambda_, initial_w, max_iters, gamma, 
             test_loss = compute_reg_cross_entropy_loss(test_y, test_x, w, lambda_)
             y_pred = predict_logistic_labels(w, test_x)
             test_accuracy = model_accuracy(y_pred, test_y)
-            print(f'epoch: {n_iter}, train_loss: {train_loss}, test_loss: {test_loss}, test accuracy: {test_accuracy}')
+            log.info(f'epoch: {n_iter}, train_loss: {train_loss}, test_loss: {test_loss}, test accuracy: {test_accuracy}')
 
     loss = compute_reg_cross_entropy_loss(y, tx, w, lambda_)
     return w, loss
