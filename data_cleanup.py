@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
+import logging as log
 
 def undefined_to_nans(tx, nan_value = -999):
     """Replaces values in a provided numpy matrix with NaN
@@ -200,7 +201,7 @@ def preprocess_train(tx, y):
         xs[i] = nans_to_medians(xs[i])
         xs[i] = add_bias(xs[i])
         ys[i][ys[i] == -1] = 0
-        print(f'x_{i} shape: {xs[i].shape}, y_{i} shape: {ys[i].shape}')
+        log.info(f'x_{i} shape: {xs[i].shape}, y_{i} shape: {ys[i].shape}')
     return xs, ys
         
 def preprocess_test(tx, idx):
@@ -223,5 +224,5 @@ def preprocess_test(tx, idx):
         xs[i] = remove_zscore_outliers(xs[i])
         xs[i] = nans_to_medians(xs[i])
         xs[i] = add_bias(xs[i])
-        print(f'x_{i} shape: {xs[i].shape}')
+        log.info(f'x_{i} shape: {xs[i].shape}')
     return xs, idx
