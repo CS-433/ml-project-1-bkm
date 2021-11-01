@@ -4,9 +4,9 @@
 
 This repository contains the code for the project1 of the Machine Learning Course. The team is composed of
 
-   - Benedek Harsányi (xxxxxx)
-   - kamil czerniak (xxxxxx)
-   - Mohamed Allouch (342708)
+   - Benedek Harsányi (benedek.harsanyi@epfl.ch)
+   - kamil czerniak (kamil.czerniak@epfl.ch)
+   - Mohamed Allouch (mohamed.allouch@epfl.ch)
 
 ### Dependencies
 
