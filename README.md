@@ -29,7 +29,7 @@ it is simply a matter of running
 
 `python run.py`
 
-on the terminal or powershell. This will generate a file called `OUTPUT.csv` with exactly the same results as presented on AIcrowd.
+on the terminal or powershell. This will generate a file called `bkm_sample_submission.csv` with exactly the same results as presented on AIcrowd.
 
 NOTE: When running the script it may give a deprecation warning about ragged nested sequences. However, the program runs regardless and it
 does not affect the final output.
@@ -52,10 +52,3 @@ does not affect the final output.
 ├─── run.py : final script used to replicate the predictions submitted, written on the file OUTPUT.csv
 └─── visualizations.py : functions to produce the plots for visualization of relevant parameters (correlation heatmap, feature distribution ... )
 </pre>
-
-
-### Technical Details
-
-##### Data Cleaning Procedure
-
-The training dataset provided had to be cleaned up in several fronts.
