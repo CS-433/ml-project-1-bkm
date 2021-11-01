@@ -23,28 +23,29 @@ log.info('preprocessing train data, removing outliers, split data by number of j
 xs, ys = preprocess_train(tX, y)
 
 # setting hyperparameters
-initial_w = np.zeros(30)
+#initial_w = np.zeros(30)
 gamma = 0.03
-max_iters = 2
+max_iters = [5, 6, 4, 10]
 batch_size = 2000
 ratio = 0.9
-
+xs_clean=[rm_correlated_features(x) for x in xs]
 weights = []
 loss = []
 for i in range(4):
     log.info(f'Initial training on PRI_jet_num={i} using Logistic Regression')
-    w , l = logistic_regression_newton_method(ys[i], xs[i], initial_w, max_iters, batch_size, ratio, gamma)
+    initial_w = np.zeros(xs_clean[i].shape[1])
+    w , l = logistic_regression_newton_method(ys[i],xs_clean[i], initial_w, max_iters[i], batch_size, ratio, gamma)
 
     log.info(f'remove 5% of the misclassified points')
-    dist = np.dot(xs[i], w)
+    dist = np.dot(xs_clean[i], w)
     y_dist = dist*[-1 if x==0 else 1 for x in list(ys[i])]
     val = np.percentile(y_dist, 5)
-    x_new = xs[i][(~(y_dist < val))]
+    x_new = xs_clean[i][(~(y_dist < val))]
     y_new = ys[i][(~(y_dist < val))]
 
-    log.info(f'number of observations: NEW MODEL: {xs[i].shape[0]}, OLD MODEL: {x_new.shape[0]} data')
+    log.info(f'number of observations: NEW MODEL: {xs_clean[i].shape[0]}, OLD MODEL: {x_new.shape[0]} data')
     log.info(f'Training second model on PRI_jet_num={i} using Logistic Regression')
-    w , l = logistic_regression_newton_method(y_new, x_new, w, max_iters, batch_size, ratio, gamma)
+    w , l = logistic_regression_newton_method(y_new, x_new, w, max_iters[i], batch_size, ratio, gamma)
 
     log.info(f'remove 5% of the misclassified points')
     dist = np.dot(x_new, w)
@@ -55,7 +56,7 @@ for i in range(4):
 
     log.info(f'number of observations: NEW MODEL: {x_new2.shape[0]}, OLD MODEL: {x_new.shape[0]} data')
     log.info(f'Training third model on PRI_jet_num={i} using Logistic Regression')
-    w , l = logistic_regression_newton_method(y_new2, x_new2, w, max_iters, batch_size, ratio, gamma)
+    w , l = logistic_regression_newton_method(y_new2, x_new2, w, max_iters[i], batch_size, ratio, gamma)
     weights.append(w)
     loss.append(l)
 
@@ -68,10 +69,11 @@ log.info('test dataset loaded')
 log.info('preprocessing test data, removing outliers, split data by number of jets')
 tx_test, idx = preprocess_test(tX_test, ids_test)
 
+tx_clean=[rm_correlated_features(x) for x in tx_test]
 log.info('making prediction on test data')
 labels = []
 for i in range(4):
-    labels.append(predict_logistic_labels(weights[i], tx_test[i]))
+    labels.append(predict_logistic_labels(weights[i], tx_clean[i]))
 final = np.array(list(labels[0])+list(labels[1])+list(labels[2])+list(labels[3]))
 final = final * 2 - 1
 final_idx = np.array(list(idx[0])+list(idx[1])+list(idx[2])+list(idx[3]))
