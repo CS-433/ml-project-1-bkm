@@ -226,3 +226,10 @@ def preprocess_test(tx, idx):
         xs[i] = add_bias(xs[i])
         log.info(f'x_{i} shape: {xs[i].shape}')
     return xs, idx
+def rm_correlated_features(X):
+    _corr = np.corrcoef(X, rowvar=False)
+    corr=_corr*np.triu(np.ones(_corr.shape),k=1)
+    to_drop = [column for column in range(X.shape[1]) if any(corr[column] > 0.95)]
+    print("columns to remove"); print(to_drop)
+    new_X=np.delete(X,to_drop,axis=1)
+    return new_X
