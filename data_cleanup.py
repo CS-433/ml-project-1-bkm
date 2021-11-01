@@ -226,7 +226,14 @@ def preprocess_test(tx, idx):
         xs[i] = add_bias(xs[i])
         log.info(f'x_{i} shape: {xs[i].shape}')
     return xs, idx
+
 def rm_correlated_features(X):
+    """Remove columns that have correlation coefficient above 0.95
+        Parameters:
+        X (numpy.ndarray): Matrix in which values should be removed
+        Returns:
+        numpy.ndarray: Matrix in which columns that have correlation coefficient above 0.95 are removed
+    """
     _corr = np.corrcoef(X, rowvar=False)
     corr=_corr*np.triu(np.ones(_corr.shape),k=1)
     to_drop = [column for column in range(X.shape[1]) if any(corr[column] > 0.95)]
